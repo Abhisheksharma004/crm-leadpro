@@ -34,3 +34,11 @@ node_modules/
 /test-results/
 /blob-report/
 /playwright/.cache/
+
+# Documentation & Meta
+/UPGRADE.md
+/README.md
+/CODE_OF_CONDUCT.md
+/CHANGELOG.md
+/AGENTS.md
+/LICENSE
