@@ -22,26 +22,15 @@ class ProcessInboundEmails extends Command
     protected $description = 'This command will process the incoming emails from the mail server.';
 
     /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct(
-        protected InboundEmailProcessor $inboundEmailProcessor
-    ) {
-        parent::__construct();
-    }
-
-    /**
      * Handle.
      *
      * @return void
      */
-    public function handle()
+    public function handle(InboundEmailProcessor $inboundEmailProcessor)
     {
         $this->info('Processing the incoming emails.');
 
-        $this->inboundEmailProcessor->processMessagesFromAllFolders();
+        $inboundEmailProcessor->processMessagesFromAllFolders();
 
         $this->info('Incoming emails processed successfully.');
     }
