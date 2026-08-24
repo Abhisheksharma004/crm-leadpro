@@ -14,13 +14,9 @@ class Locale
      * @return void
      */
     public function __construct(
-        Application $app,
-        Request $request
-    ) {
-        $this->app = $app;
-
-        $this->request = $request;
-    }
+        protected Application $app,
+        protected Request $request
+    ) {}
 
     /**
      * Handle an incoming request.
