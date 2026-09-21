@@ -7,6 +7,7 @@
         >
         <div
             class="relative"
+            :class="showPopup ? 'z-30' : ''"
             ref="lookup"
         >
             <!-- Input Box (Button) -->
@@ -15,7 +16,7 @@
                 @click="toggle"
             >
                 <!-- Input Container -->
-                <div class="relative flex cursor-pointer items-center justify-between rounded border border-gray-300 p-2 hover:border-gray-400 focus:border-gray-400 dark:border-gray-800 dark:text-gray-300">
+                <div class="relative flex cursor-pointer items-center justify-between rounded border border-gray-300 bg-white p-2 hover:border-gray-400 focus:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
                     <!-- Selected Item or Placeholder Text -->
                     <span
                         class="overflow-hidden text-ellipsis"
@@ -54,7 +55,9 @@
             <!-- Popup Box -->
             <div
                 v-if="showPopup"
-                class="absolute top-full z-10 mt-1 flex w-full origin-top transform flex-col gap-2 rounded-lg border border-gray-300 bg-white p-2 shadow-lg transition-transform dark:border-gray-900 dark:bg-gray-800"
+                class="absolute z-50 flex w-full transform flex-col gap-2 rounded-lg border border-gray-300 !bg-white p-2 shadow-2xl transition-transform dark:border-gray-900 dark:!bg-gray-800"
+                :class="openUpwards ? 'bottom-full mb-1 origin-bottom' : 'top-full mt-1 origin-top'"
+                style="background-color: #ffffff;"
             >
                 <!-- Search Bar -->
                 <div class="relative flex items-center">
@@ -88,7 +91,16 @@
                         class="cursor-pointer px-4 py-2 text-gray-800 transition-colors hover:bg-blue-100 dark:text-white dark:hover:bg-gray-900"
                         @click="selectItem(item)"
                     >
-                        @{{ item.name }}
+                        <div class="flex items-center justify-between gap-2">
+                            <span>@{{ item.name }}</span>
+
+                            <span
+                                v-if="item.organization?.name"
+                                class="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                            >
+                                @{{ item.organization.name }}
+                            </span>
+                        </div>
                     </li>
 
                     <template v-if="filteredResults.length === 0">
@@ -98,8 +110,8 @@
                     </template>
 
                     <li
-                        v-if="canAddNew"
-                        @click="selectItem({ id: '', name: searchTerm })"
+                        v-if="canAddNew && searchTerm.trim().length > 0"
+                        @click="selectItem({ id: '', name: searchTerm.trim() })"
                         class="cursor-pointer border-t border-gray-800 px-4 py-4 text-brandColor hover:bg-brandColor hover:text-white dark:border-gray-300 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-white"
                     >
                         <i class="icon-add text-md ltr:mr-2 rtl:ml-2"></i>
@@ -182,6 +194,8 @@
                     isSearching: false,
 
                     cancelToken: null,
+
+                    openUpwards: false,
                 };
             },
 
@@ -189,8 +203,6 @@
                 if (this.value) {
                     this.selectedItem = this.value;
                 }
-
-                console.log(this.placeholder);
             },
 
             created() {
@@ -204,6 +216,17 @@
             watch: {
                 searchTerm(newVal, oldVal) {
                     this.search();
+                },
+
+                params: {
+                    deep: true,
+                    handler() {
+                        this.searchedResults = [];
+
+                        if (this.showPopup || this.preload) {
+                            this.fetchResults(this.searchTerm.trim(), this.searchTerm.trim() ? null : 5);
+                        }
+                    }
                 },
             },
 
@@ -232,6 +255,23 @@
 
             methods: {
                 /**
+                 * Calculate whether popup should open upwards or downwards.
+                 *
+                 * @return {void}
+                 */
+                calculateDropdownPosition() {
+                    if (! this.$refs.lookup) {
+                        return;
+                    }
+
+                    const rect = this.$refs.lookup.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    const spaceAbove = rect.top;
+
+                    this.openUpwards = spaceBelow < 260 && spaceAbove > spaceBelow;
+                },
+
+                /**
                  * Toggle the popup.
                  *
                  * @return {void}
@@ -240,11 +280,19 @@
                     this.showPopup = ! this.showPopup;
 
                     if (this.showPopup) {
+                        this.calculateDropdownPosition();
+
                         if (! this.searchTerm.trim()) {
                             this.fetchResults('', 5);
                         }
 
-                        this.$nextTick(() => this.$refs.searchInput.focus());
+                        this.$nextTick(() => {
+                            this.calculateDropdownPosition();
+
+                            if (this.$refs.searchInput) {
+                                this.$refs.searchInput.focus();
+                            }
+                        });
                     }
                 },
 

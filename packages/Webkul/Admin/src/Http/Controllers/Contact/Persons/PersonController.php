@@ -66,6 +66,8 @@ class PersonController extends Controller
         Event::dispatch('contacts.person.create.after', $person);
 
         if (request()->ajax()) {
+            $person->load('organization');
+
             return response()->json([
                 'data' => $person,
                 'message' => trans('admin::app.contacts.persons.index.create-success'),
@@ -141,6 +143,12 @@ class PersonController extends Controller
                         ->orWhere('emails', 'like', '%'.$searchTerm.'%')
                         ->orWhere('contact_numbers', 'like', '%'.$searchTerm.'%');
                 });
+            });
+        }
+
+        if ($organizationId = request()->query('organization_id')) {
+            $personRepository = $personRepository->scopeQuery(function ($query) use ($organizationId) {
+                return $query->where('organization_id', $organizationId);
             });
         }
 

@@ -1,3 +1,7 @@
+@php
+    $canCreateProduct = bouncer()->hasPermission('products.create');
+@endphp
+
 <v-product-list :data="products"></v-product-list>
 
 @pushOnce('scripts')
@@ -8,6 +12,18 @@
         <div class="flex flex-col gap-4">
             {!! view_render_event('admin.leads.create.products.form_controls.table.before') !!}
 
+            @if ($canCreateProduct)
+                <div class="flex justify-end">
+                    <button
+                        type="button"
+                        class="text-xs font-semibold text-brandColor hover:underline dark:text-brandColor"
+                        @click="openProductModal"
+                    >
+                        + @lang('admin::app.products.index.create-btn')
+                    </button>
+                </div>
+            @endif
+
             <div class="block w-full">
                 <!-- Table -->
                 <x-admin::table>
@@ -16,23 +32,23 @@
                     <!-- Table Head -->
                     <x-admin::table.thead>
                         <x-admin::table.thead.tr>
-                            <x-admin::table.th>
+                            <x-admin::table.th style="width: 50%; min-width: 250px;">
                                 @lang('admin::app.leads.common.products.product-name')
                             </x-admin::table.th>
 
-                            <x-admin::table.th class="text-center">
+                            <x-admin::table.th style="width: 12%;" class="text-center">
                                 @lang('admin::app.leads.common.products.quantity')
                             </x-admin::table.th>
 
-                            <x-admin::table.th class="text-center">
+                            <x-admin::table.th style="width: 15%;" class="text-center">
                                 @lang('admin::app.leads.common.products.price')
                             </x-admin::table.th>
 
-                            <x-admin::table.th class="text-center">
+                            <x-admin::table.th style="width: 15%;" class="text-center">
                                 @lang('admin::app.leads.common.products.amount')
                             </x-admin::table.th>
 
-                            <x-admin::table.th class="text-right">
+                            <x-admin::table.th style="width: 8%;" class="text-right">
                                 @lang('admin::app.leads.common.products.action')
                             </x-admin::table.th>
                         </x-admin::table.thead.tr>
@@ -64,16 +80,71 @@
 
             {!! view_render_event('admin.leads.create.products.form_controls.table.after') !!}
 
-            <!-- Add New Product Item -->
-            <button
-                type="button"
-                class="flex max-w-max items-center gap-2 text-brandColor"
-                @click="addProduct"
-            >
-                <i class="icon-add text-md !text-brandColor"></i>
+            <div>
+                <!-- Add More Button -->
+                <button
+                    type="button"
+                    class="flex max-w-max items-center gap-2 font-medium text-brandColor"
+                    @click="addProduct"
+                >
+                    <i class="icon-add text-md !text-brandColor"></i>
 
-                @lang('admin::app.leads.common.products.add-more')
-            </button>
+                    @lang('admin::app.leads.common.products.add-more')
+                </button>
+            </div>
+
+            @if ($canCreateProduct)
+                <!-- Quick Create Product Modal -->
+                <Teleport to="body">
+                    <x-admin::modal
+                        ref="productModal"
+                        size="large"
+                    >
+                        <x-slot:header>
+                            <div class="flex items-center justify-between">
+                                <p class="text-xl font-semibold text-gray-800 dark:text-white">
+                                    @lang('admin::app.products.create.title')
+                                </p>
+                            </div>
+                        </x-slot>
+
+                        <x-slot:content>
+                            <x-admin::form
+                                v-slot="{ meta, errors, handleSubmit }"
+                                as="div"
+                                ref="productFormWrapper"
+                            >
+                                <form
+                                    @submit="handleSubmit($event, createProduct)"
+                                    ref="productForm"
+                                >
+                                    <input type="hidden" name="quick_add" value="product" />
+                                    <input type="hidden" name="entity_type" value="products" />
+
+                                    <div class="grid gap-4 max-sm:flex-wrap">
+                                        <x-admin::attributes
+                                            :custom-attributes="app('Webkul\Attribute\Repositories\AttributeRepository')->findWhere([
+                                                'entity_type' => 'products',
+                                                'quick_add' => 1,
+                                            ])"
+                                        />
+                                    </div>
+                                </form>
+                            </x-admin::form>
+                        </x-slot>
+
+                        <x-slot:footer>
+                            <x-admin::button
+                                class="primary-button"
+                                :title="trans('admin::app.products.create.save-btn')"
+                                ::loading="isStoringProduct"
+                                ::disabled="isStoringProduct"
+                                @click="submitProductForm"
+                            />
+                        </x-slot>
+                    </x-admin::modal>
+                </Teleport>
+            @endif
         </div>
     </script>
 
@@ -83,7 +154,7 @@
     >
         <x-admin::table.thead.tr>
             <!-- Product Name -->
-            <x-admin::table.td>
+            <x-admin::table.td style="width: 50%; min-width: 250px;">
                 <x-admin::form.control-group class="!mb-0">
                     <x-admin::lookup
                         ::src="src"
@@ -107,7 +178,7 @@
             </x-admin::table.td>
 
             <!-- Product Quantity -->
-            <x-admin::table.td class="text-right">
+            <x-admin::table.td style="width: 12%;" class="text-right">
                 <x-admin::form.control-group>
                     <x-admin::form.control-group.control
                         type="inline"
@@ -123,7 +194,7 @@
             </x-admin::table.td>
 
             <!-- Price -->
-            <x-admin::table.td class="text-right">
+            <x-admin::table.td style="width: 15%;" class="text-right">
                 <x-admin::form.control-group>
                     <x-admin::form.control-group.control
                         type="inline"
@@ -140,7 +211,7 @@
             </x-admin::table.td>
 
             <!-- Amount -->
-            <x-admin::table.td class="text-right">
+            <x-admin::table.td style="width: 15%;" class="text-right">
                 <x-admin::form.control-group>
                     <x-admin::form.control-group.control
                         type="inline"
@@ -157,7 +228,7 @@
             </x-admin::table.td>
 
             <!-- Action -->
-            <x-admin::table.td class="text-right">
+            <x-admin::table.td style="width: 8%;" class="text-right">
                 <x-admin::form.control-group >
                     <i
                         @click="removeProduct"
@@ -177,9 +248,10 @@
             data: function () {
                 return {
                     products: this.data ? this.data : [],
+
+                    isStoringProduct: false,
                 }
             },
-
 
             created() {
                 if (! this.data) {
@@ -196,12 +268,93 @@
                         quantity: 0,
                         price: 0,
                         amount: null,
-                    })
+                    });
                 },
 
                 removeProduct (product) {
                     const index = this.products.indexOf(product);
                     this.products.splice(index, 1);
+                },
+
+                openProductModal() {
+                    if (this.$refs.productModal) {
+                        this.$refs.productModal.open();
+                    }
+                },
+
+                submitProductForm() {
+                    const form = this.$refs.productForm;
+
+                    if (! form) {
+                        return;
+                    }
+
+                    if (typeof form.requestSubmit === 'function') {
+                        form.requestSubmit();
+                    } else {
+                        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                    }
+                },
+
+                createProduct(params, { setErrors }) {
+                    const form = this.$refs.productForm;
+
+                    if (! form) {
+                        return;
+                    }
+
+                    this.isStoringProduct = true;
+
+                    const formData = new FormData(form);
+
+                    this.$axios.post("{{ route('admin.products.store') }}", formData)
+                        .then(response => {
+                            this.$emitter.emit('add-flash', {
+                                type: 'success',
+                                message: response.data.message
+                            });
+
+                            if (this.$refs.productModal) {
+                                this.$refs.productModal.close();
+                            }
+
+                            form.reset();
+
+                            const newProduct = response.data.data;
+
+                            if (newProduct) {
+                                const emptyIndex = this.products.findIndex(p => ! p.product_id && ! p.name);
+
+                                if (emptyIndex !== -1) {
+                                    this.products[emptyIndex].product_id = newProduct.id;
+                                    this.products[emptyIndex].name = newProduct.name;
+                                    this.products[emptyIndex].price = newProduct.price || 0;
+                                    this.products[emptyIndex].quantity = newProduct.quantity || 1;
+                                } else {
+                                    this.products.push({
+                                        id: null,
+                                        product_id: newProduct.id,
+                                        name: newProduct.name,
+                                        quantity: newProduct.quantity || 1,
+                                        price: newProduct.price || 0,
+                                        amount: (Number(newProduct.price) || 0) * (Number(newProduct.quantity) || 1),
+                                    });
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            if (error.response?.status == 422) {
+                                setErrors(error.response.data.errors);
+                            } else {
+                                this.$emitter.emit('add-flash', {
+                                    type: 'error',
+                                    message: error.response?.data?.message || error.message,
+                                });
+                            }
+                        })
+                        .finally(() => {
+                            this.isStoringProduct = false;
+                        });
                 },
             },
         });

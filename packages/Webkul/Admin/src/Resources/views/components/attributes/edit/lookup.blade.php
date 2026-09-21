@@ -33,6 +33,7 @@
     >
         <div
             class="relative"
+            :class="showPopup ? 'z-30' : ''"
             ref="lookup"
         >
             <div
@@ -41,9 +42,9 @@
             >
                 <!-- Input Container -->
                 <div
-                    class="relative flex items-center justify-between rounded border border-gray-300 p-2 hover:border-gray-400 focus:border-gray-400 dark:border-gray-800 dark:text-gray-300"
+                    class="relative flex items-center justify-between rounded border border-gray-300 bg-white p-2 hover:border-gray-400 focus:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300"
                     :class="{
-                        'bg-gray-50': isDisabled,
+                        'bg-gray-50 dark:!bg-gray-800': isDisabled,
                     }"
                 >
                     <!-- Selected Item or Placeholder Text -->
@@ -89,7 +90,9 @@
             <!-- Popup Box -->
             <div
                 v-if="showPopup"
-                class="absolute top-full z-10 mt-1 flex w-full origin-top transform flex-col gap-2 rounded-lg border border-gray-300 bg-white p-2 shadow-lg transition-transform dark:border-gray-900 dark:bg-gray-800"
+                class="absolute z-50 flex w-full transform flex-col gap-2 rounded-lg border border-gray-300 !bg-white p-2 shadow-2xl transition-transform dark:border-gray-900 dark:!bg-gray-800"
+                :class="openUpwards ? 'bottom-full mb-1 origin-bottom' : 'top-full mt-1 origin-top'"
+                style="background-color: #ffffff;"
             >
                 <!-- Search Bar -->
                 <div class="relative flex items-center">
@@ -117,11 +120,11 @@
                 </div>
 
                 <!-- Results List -->
-                <ul class="max-h-40 divide-y divide-gray-100 overflow-y-auto">
+                <ul class="max-h-48 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-700">
                     <li
                         v-for="item in filteredResults"
                         :key="item.id"
-                        class="flex cursor-pointer gap-2 p-2 transition-colors hover:bg-blue-100 dark:text-gray-300 dark:hover:bg-gray-900"
+                        class="flex cursor-pointer items-center justify-between rounded p-2 transition-colors hover:bg-blue-100 dark:text-gray-300 dark:hover:bg-gray-900"
                         @click="handleResult(item)"
                     >
                         <!-- Entity Name -->
@@ -132,17 +135,17 @@
                         <li class="px-4 py-2 text-center text-gray-500">
                             @lang('admin::app.components.attributes.lookup.no-result-found')
                         </li>
-
-                        <li
-                            v-if="searchTerm.length > 2 && canAddNew"
-                            @click="handleResult({ id: '', name: searchTerm })"
-                            class="cursor-pointer border-t border-gray-800 px-4 py-2 text-gray-500 hover:bg-brandColor hover:text-white dark:border-gray-300 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-white"
-                        >
-                            <i class="icon-add text-md"></i>
-
-                            @lang('admin::app.components.lookup.add-as-new')
-                        </li>
                     </template>
+
+                    <li
+                        v-if="canAddNew && searchTerm.trim().length > 0"
+                        @click="handleResult({ id: '', name: searchTerm.trim() })"
+                        class="flex cursor-pointer items-center gap-2 rounded border-t border-gray-200 px-4 py-2 text-brandColor hover:bg-brandColor hover:text-white dark:border-gray-700 dark:text-brandColor dark:hover:bg-brandColor dark:hover:text-white"
+                    >
+                        <i class="icon-add text-md"></i>
+
+                        @lang('admin::app.components.lookup.add-as-new')
+                    </li>
                 </ul>
             </div>
         </div>
@@ -174,6 +177,8 @@
                     lookupEntityRoute: `{{ route('admin.settings.attributes.lookup_entity') }}/${this.attribute.lookup_type}`,
 
                     isSearching: false,
+
+                    openUpwards: false,
                 };
             },
 
@@ -205,6 +210,18 @@
             },
 
             methods: {
+                calculateDropdownPosition() {
+                    if (! this.$refs.lookup) {
+                        return;
+                    }
+
+                    const rect = this.$refs.lookup.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    const spaceAbove = rect.top;
+
+                    this.openUpwards = spaceBelow < 260 && spaceAbove > spaceBelow;
+                },
+
                 toggle() {
                     if (this.isDisabled) {
                         this.showPopup = false;
@@ -215,11 +232,19 @@
                     this.showPopup = ! this.showPopup;
 
                     if (this.showPopup) {
+                        this.calculateDropdownPosition();
+
                         if (! this.searchTerm.trim()) {
                             this.fetchLookupResults('', 5);
                         }
 
-                        this.$nextTick(() => this.$refs.searchInput.focus());
+                        this.$nextTick(() => {
+                            this.calculateDropdownPosition();
+
+                            if (this.$refs.searchInput) {
+                                this.$refs.searchInput.focus();
+                            }
+                        });
                     }
                 },
 
