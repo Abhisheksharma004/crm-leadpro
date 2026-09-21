@@ -62,39 +62,51 @@
 
                         {!! view_render_event('admin.leads.view.person.email.before', ['lead' => $lead]) !!}
 
-                        @foreach ($lead->person->emails as $email)
-                            <div class="flex gap-1">
-                                <a
-                                    class="text-brandColor"
-                                    href="mailto:{{ $email['value'] }}"
-                                >
-                                    {{ $email['value'] }}
-                                </a>
+                        @if (! empty($lead->person->emails))
+                            @foreach ($lead->person->emails as $email)
+                                @if (! empty($email['value']))
+                                    <div class="flex gap-1">
+                                        <a
+                                            class="text-brandColor"
+                                            href="mailto:{{ $email['value'] }}"
+                                        >
+                                            {{ $email['value'] }}
+                                        </a>
 
-                                <span class="text-gray-500 dark:text-gray-300">
-                                    ({{ $email['label'] }})
-                                </span>
-                            </div>
-                        @endforeach
+                                        @if (! empty($email['label']))
+                                            <span class="text-gray-500 dark:text-gray-300">
+                                                ({{ $email['label'] }})
+                                            </span>
+                                        @endif
+                                    </div>
+                                @endif
+                            @endforeach
+                        @endif
 
                         {!! view_render_event('admin.leads.view.person.email.after', ['lead' => $lead]) !!}
 
                         {!! view_render_event('admin.leads.view.person.contact_numbers.before', ['lead' => $lead]) !!}
 
-                        @foreach ($lead->person->contact_numbers as $contactNumber)
-                            <div class="flex gap-1">
-                                <a
-                                    class="text-brandColor"
-                                    href="callto:{{ $contactNumber['value'] }}"
-                                >
-                                    {{ $contactNumber['value'] }}
-                                </a>
+                        @if (! empty($lead->person->contact_numbers))
+                            @foreach ($lead->person->contact_numbers as $contactNumber)
+                                @if (! empty($contactNumber['value']))
+                                    <div class="flex gap-1">
+                                        <a
+                                            class="text-brandColor"
+                                            href="callto:{{ $contactNumber['value'] }}"
+                                        >
+                                            {{ $contactNumber['value'] }}
+                                        </a>
 
-                                <span class="text-gray-500 dark:text-gray-300">
-                                    ({{ $contactNumber['label'] }})
-                                </span>
-                            </div>
-                        @endforeach
+                                        @if (! empty($contactNumber['label']))
+                                            <span class="text-gray-500 dark:text-gray-300">
+                                                ({{ $contactNumber['label'] }})
+                                            </span>
+                                        @endif
+                                    </div>
+                                @endif
+                            @endforeach
+                        @endif
 
                         {!! view_render_event('admin.leads.view.person.contact_numbers.after', ['lead' => $lead]) !!}
                     </div>
